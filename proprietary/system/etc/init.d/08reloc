@@ -1,0 +1,79 @@
+#!/system/bin/sh
+
+L="log -p i -t `busybox basename $0`"
+
+can_relocate()
+{
+	d="$1"
+
+	# Sanity checks: only relocate an empty directory
+	if [ -L "$d" ]; then
+	        $L "not relocating $d: is a symlink"
+	        return 1
+	fi
+	if [ ! -d "$d" ]; then
+	        $L "not relocating $d: does not exist"
+	        return 1
+	fi
+	return 0
+}
+
+is_empty()
+{
+	d="$1"
+	if [ "`ls $d | wc -l`" -ne 0 ]; then
+	        return 1
+	fi
+	return 0
+}
+
+do_relocate()
+{
+	src="$1"
+	dst="$2"
+	uid="$3"
+	gid="$4"
+	mod="$5"
+
+	$L "relocate $src to $dst"
+	if [ ! -d "$dst" ]; then
+		mkdir -p "$dst"
+		chown $uid:$gid "$dst"
+		chmod $mod "$dst"
+	fi
+	mount -o bind "$dst" "$src"
+}
+
+sdext=0
+busybox mountpoint /sd-ext >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+	sdext=1
+fi
+
+# Relocate dalvik cache
+olddir="/data/dalvik-cache"
+newdir="/sd-ext/dalvik-cache"
+if can_relocate "$olddir"; then
+	if [ "$sdext" -eq 0 ]; then
+		newdir="/cache/dalvik-cache"
+	fi
+	if ! is_empty "$newdir"; then
+		rm -f "$newdir"/*
+	fi
+	do_relocate "$olddir" "$newdir" 1000 1000 0771
+fi
+
+# Relocate apps
+olddir="/data/app"
+newdir="/sd-ext/app"
+if can_relocate "$olddir"; then
+	if [ "$sdext" -eq 0 ]; then
+		$L "not relocating $olddir: sd-ext not mounted"
+	else
+		if is_empty "$olddir"; then
+			do_relocate "$olddir" "$newdir" 1000 1000 0771
+		else
+			$L "not relocating $olddir: is not empty"
+		fi
+	fi
+fi
