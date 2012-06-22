@@ -15,7 +15,6 @@ PRODUCT_COPY_FILES += \
     vendor/lge/VM670/proprietary/system/etc/tweaks.sh:system/etc/tweaks.sh \
     vendor/lge/VM670/proprietary/system/etc/setwifi.sh:system/etc/setwifi.sh\
     vendor/lge/VM670/proprietary/system/etc/init.d:system/etc/init.d \
-    vendor/lge/VM670/proprietary/init.rc:root/init.rc \
     vendor/lge/VM670/proprietary/system/etc/hosts:system/etc/hosts \
 
 PRODUCT_COPY_FILES += \
